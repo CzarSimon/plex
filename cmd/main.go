@@ -1,42 +1,55 @@
 package main
 
 import (
-    "fmt"
-    "time"
+	"fmt"
+	"sync"
+	"time"
 
-    "github.com/CzarSimon/plex"
-    "github.com/CzarSimon/plex/schema"
+	"github.com/CzarSimon/plex/broker"
+	"github.com/CzarSimon/plex/pkg"
+	"github.com/CzarSimon/plex/pkg/schema"
 )
 
 const TopicName = "t1"
 
 func newMessage(body string) schema.Message {
-    return schema.NewMessage(TopicName, []byte(body))
+	return schema.NewMessage(TopicName, []byte(body))
 }
 
-func consume(topic *plex.Topic) {
-    for {
-        msg := <-topic.Channel
-        fmt.Println(msg)
-    }
+func consume(topic *pkg.Topic) {
+	for {
+		msg := <-topic.Channel
+		fmt.Println(msg)
+	}
 }
 
-func produce(broker *plex.Broker) {
-    var msg schema.Message
-    for {
-        time.Sleep(1 * time.Second)
-        msg = newMessage("Hello")
-        broker.HandleMessage(msg)
-    }
+func produce(broker *broker.Broker) {
+	var msg schema.Message
+	for {
+		time.Sleep(1 * time.Second)
+		msg = newMessage("Hello")
+		broker.HandleMessage(msg)
+	}
 }
 
 func main() {
-    topic := plex.NewTopic(TopicName)
-    broker := plex.NewBroker(topic)
-    go consume(topic)
-    go produce(broker)
+	topic := pkg.NewTopic(TopicName)
+	shutdownCh := make(chan int)
+	b := broker.New(shutdownCh, topic)
+	go consume(topic)
+	go produce(b)
 
-    fmt.Println("Press enter to exit: ")
-    fmt.Scanln()
+	go func() {
+		shutdownSignal := 9
+		time.Sleep(10 * time.Second)
+		shutdownCh <- shutdownSignal
+	}()
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		b.Start()
+	}()
+	wg.Wait()
 }
-
