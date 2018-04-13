@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+    "github.com/CzarSimon/plex/consumer"
 	"github.com/CzarSimon/plex/broker"
 	"github.com/CzarSimon/plex/pkg"
 	"github.com/CzarSimon/plex/pkg/schema"
@@ -14,7 +15,7 @@ func newMessage(topicName, body string) schema.Message {
 	return schema.NewMessage(topicName, []byte(body))
 }
 
-func createHandler(name string) broker.ConsumerHandler {
+func createHandler(name string) consumer.Handler {
 	return func(msg schema.Message) error {
         fmt.Printf("Consumer: %s\n%s\n", name, msg)
         return nil

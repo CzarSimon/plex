@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+    "github.com/CzarSimon/plex/consumer"
     "github.com/CzarSimon/plex/pkg"
 	"github.com/CzarSimon/plex/pkg/schema"
 )
@@ -60,13 +61,8 @@ func (b *Broker) HandleMessage(msg schema.Message) error {
 	return nil
 }
 
-type consumerRegistration struct {
-    topic   string
-    handler ConsumerHandler
-}
-
 // RegisterConsumer registers a new consumer.
-func (b *Broker) RegisterConsumer(topicName string, handler ConsumerHandler) error {
+func (b *Broker) RegisterConsumer(topicName string, handler consumer.Handler) error {
     mux, ok := b.Topics[topicName]
     if !ok {
         return ErrNoSuchTopic
@@ -81,25 +77,4 @@ func (b *Broker) handleNewTopics() {
         go mux.listen()
     }
 }
-
-/*
-// startConsumer initializes a consumer listening to a topic.
-func (b *Broker) startConsumer(consumer consumerRegistration) {
-    topic, ok := b.Topics[consumer.topic]
-    if !ok {
-        log.Println(ErrNoSuchTopic)
-        return
-    }
-    var err error
-    for msg := range topic.Channel {
-        err = consumer.handler(msg)
-        if err == ErrConsumerClosed {
-            break
-        }
-        if err != nil {
-            log.Println(err)
-        }
-    }
-}
-*/
 

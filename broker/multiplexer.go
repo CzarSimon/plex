@@ -5,19 +5,18 @@ import (
     "log"
     "sync"
 
+    "github.com/CzarSimon/plex/consumer"
     "github.com/CzarSimon/plex/pkg"
-    "github.com/CzarSimon/plex/pkg/schema"
 )
 
 var (
     ErrNoSuchHandler = errors.New("No such handler found")
-    ErrConsumerClosed = errors.New("Consumer closed")
 )
 
 // A multiplexer forwards messages published on a topic to mulitple consumers.
 type multiplexer struct {
     nextId   int
-    handlers map[int]ConsumerHandler
+    handlers map[int]consumer.Handler
     topic    *pkg.Topic
     lock     *sync.RWMutex
 }
@@ -26,7 +25,7 @@ type multiplexer struct {
 func newMultiplexer(topic *pkg.Topic) *multiplexer {
     return &multiplexer{
         nextId:   0,
-        handlers: make(map[int]ConsumerHandler),
+        handlers: make(map[int]consumer.Handler),
         topic:    topic,
         lock:     &sync.RWMutex{},
     }
@@ -38,7 +37,7 @@ func (mux *multiplexer) listen() {
     for msg := range mux.topic.Channel {
         for id, handle := range mux.handlers {
             err = handle(msg)
-            if err == ErrConsumerClosed {
+            if err == consumer.ErrConsumerClosed {
                 mux.removeHandler(id)
             }
             if err != nil {
@@ -49,7 +48,7 @@ func (mux *multiplexer) listen() {
 }
 
 // addHandler adds a handler to the multiplexer with a new unique id.
-func (mux *multiplexer) addHandler(handler ConsumerHandler) {
+func (mux *multiplexer) addHandler(handler consumer.Handler) {
     mux.lock.Lock()
     defer mux.lock.Unlock()
     for {
@@ -74,7 +73,4 @@ func (mux *multiplexer) removeHandler(id int) error {
     delete(mux.handlers, id)
     return nil
 }
-
-// ConsumerHandler is a function for consumers to handle incomming mesages.
-type ConsumerHandler func(msg schema.Message) error
 
