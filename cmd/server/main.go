@@ -7,20 +7,21 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-const port = "8080"
-
-func setupRouter() *httprouter.Router {
+func setupRouter(env *Env) *httprouter.Router {
 	router := httprouter.New()
 
-	router.POST("/v1/topic/:name", healthCheck)
+	router.POST("/v1/topic/:name", env.createTopic)
 	router.GET("/health", healthCheck)
 
 	return router
 }
 
 func main() {
-	log.Printf("Starting PLEX_SERVER listening on port: %s\n", port)
-	err := http.ListenAndServe(":"+port, setupRouter())
+	config := getConfig("8080")
+	env := newEnv()
+
+	log.Printf("Starting PLEX_SERVER listening on port: %s\n", config.Port)
+	err := http.ListenAndServe(":"+config.Port, setupRouter(env))
 	if err != nil {
 		log.Fatal(err)
 	}
