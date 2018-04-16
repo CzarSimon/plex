@@ -13,7 +13,7 @@ func setupRouter(env *Env) *httprouter.Router {
 
 	router.POST("/v1/topic/:topicName", env.createTopic)
 	router.PUT("/v1/topic/:topicName", env.appendMessage)
-	router.GET("/v1/topic/:topicName/consume", env.addConsumer)
+	router.GET("/v1/topic/:topicName/consume/:type", env.addConsumer)
 
 	router.GET("/health", healthCheck)
 

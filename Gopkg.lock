@@ -4,7 +4,10 @@
 [[projects]]
   branch = "master"
   name = "github.com/CzarSimon/httputil"
-  packages = ["."]
+  packages = [
+    ".",
+    "query"
+  ]
   revision = "9b82cb54604d7bda881294bd815a77074efc9ada"
 
 [[projects]]
@@ -16,6 +19,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "3d6b1deeecff65e4b0a535164ebb88a199e98331674168888669e71369e7a2b1"
+  inputs-digest = "8e608ecfea63327ca78da97a34d9db9a39b1bb5aae173710f27fc19d1ff46b43"
   solver-name = "gps-cdcl"
   solver-version = 1

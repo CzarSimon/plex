@@ -6,9 +6,7 @@ import (
 	"net/http"
 
 	"github.com/CzarSimon/httputil"
-	"github.com/CzarSimon/httputil/query"
 	"github.com/CzarSimon/plex/broker"
-	"github.com/CzarSimon/plex/consumer"
 	"github.com/CzarSimon/plex/pkg"
 	"github.com/CzarSimon/plex/pkg/schema"
 	"github.com/julienschmidt/httprouter"
@@ -40,26 +38,6 @@ func (env *Env) appendMessage(w http.ResponseWriter, r *http.Request, ps httprou
 	}
 	msg := schema.NewMessage(ps.ByName("topicName"), msgBody)
 	err = env.broker.HandleMessage(msg)
-	if err == broker.ErrNoSuchTopic {
-		httputil.SendErr(w, httputil.BadRequest)
-		return
-	}
-	if err != nil {
-		httputil.SendErr(w, httputil.InternalServerError)
-		return
-	}
-	httputil.SendOK(w)
-}
-
-// addConsumer sets up a consumer handler on a given topic.
-func (env *Env) addConsumer(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	consumerName, err := query.ParseValue(r, "name")
-	if err != nil {
-		httputil.SendErr(w, httputil.BadRequest)
-		return
-	}
-	consumer := consumer.NewLogConsumer(consumerName)
-	err = env.broker.RegisterConsumer(ps.ByName("topicName"), consumer)
 	if err == broker.ErrNoSuchTopic {
 		httputil.SendErr(w, httputil.BadRequest)
 		return
