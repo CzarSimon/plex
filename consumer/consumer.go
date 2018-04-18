@@ -7,6 +7,12 @@ import (
 	"github.com/CzarSimon/plex/pkg/schema"
 )
 
+// Handler types
+const (
+	LogConsumerType      = "LOG_CONSUMER"
+	WebsocketHandlerType = "WEBSOCKET_HANDLER"
+)
+
 // Common consumer errors
 var (
 	ErrConsumerClosed = errors.New("Consumer closed")

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"net/http"
 
 	"github.com/CzarSimon/httputil"
@@ -13,25 +13,12 @@ import (
 
 // addConsumer sets up a consumer handler on a given topic.
 func (env *Env) addConsumer(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	var handler consumer.Handler
-	var err error
-	switch ps.ByName("type") {
-	case "Logger":
-		handler, err = createLogConsumer(r)
-	default:
-		handler, err = nil, httputil.BadRequest
-	}
-	switch e := err.(type) {
-	case httputil.Error:
-		httputil.SendErr(w, e)
-		return
-	case nil:
-	default:
-		log.Println(err)
-		httputil.SendErr(w, httputil.InternalServerError)
+	handler, handlerErr := getConsumerHandler(w, r, ps)
+	if handlerErr != nil {
+		httputil.SendErr(w, *handlerErr)
 		return
 	}
-	err = env.broker.RegisterConsumer(ps.ByName("topicName"), handler)
+	err := env.broker.RegisterConsumer(ps.ByName("topicName"), handler)
 	if err == broker.ErrNoSuchTopic {
 		httputil.SendErr(w, httputil.BadRequest)
 		return
@@ -41,6 +28,35 @@ func (env *Env) addConsumer(w http.ResponseWriter, r *http.Request, ps httproute
 		return
 	}
 	httputil.SendOK(w)
+}
+
+// getConsumerHandler sets up a consumer handler based on a the requested type.
+func getConsumerHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) (consumer.Handler, *httputil.Error) {
+	var handler consumer.Handler
+	var err error
+
+	switch ps.ByName("type") {
+	case consumer.LogConsumerType:
+		handler, err = createLogConsumer(r)
+	case consumer.WebsocketHandlerType:
+		handler, err = consumer.NewWebsocketHandler(w, r)
+	default:
+		handler, err = nil, httputil.BadRequest
+	}
+	if err == nil {
+		return handler, nil
+	}
+
+	fmt.Println(err)
+
+	if err != httputil.BadRequest {
+		err = httputil.Error{Status: http.StatusInternalServerError, Err: err}
+	}
+	httperr, ok := err.(httputil.Error)
+	if !ok {
+		return nil, &httputil.InternalServerError
+	}
+	return handler, &httperr
 }
 
 func createLogConsumer(r *http.Request) (consumer.Handler, error) {
